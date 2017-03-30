@@ -1,0 +1,3 @@
+This scraper scrapes the "UKLRP":http://www.ukrlp.co.uk/ website.
+
+It will scrape 1000 records each time the scraper is running.
