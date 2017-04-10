@@ -1,5 +1,6 @@
 <?php
-require 'scraperwiki.php';
+require 'simple_html_dom.php';
+require 'excel_reader2.php';
 ######################################
 # Basic PHP scraper
 ######################################
@@ -41,7 +42,7 @@ $legal= parseAddress($legal);
        
         if (trim($name)!='') {
 
-scraperwiki::save(array('num'), array('num' => "".clean($num),'name' => clean($name),'trading' => clean($trading),
+scraperwiki::save_sqlite(array('num'), array('num' => "".clean($num),'name' => clean($name),'trading' => clean($trading),
                                              'legal_address' => clean($legal['address']),'legal_phone' => clean($legal['phone']),
                                             'legal_fax' => clean($legal['fax']),'legal_email' => clean($legal['email']),
                                         'legal_web' => clean($legal['web']),
