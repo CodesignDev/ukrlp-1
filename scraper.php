@@ -1,18 +1,18 @@
 <?php
-require 'simple_html_dom.php';
-require 'excel_reader2.php';
+require 'scraperwiki.php';
+require 'scraperwiki/simple_html_dom.php';
 ######################################
 # Basic PHP scraper
 ######################################
 
 
 $max = 10032586;
-$counter = scraperwiki::get_metadata('counter');          
+$counter = scraperwiki::get_var('counter');          
 
     for ($i=0; $i< 1000; $i++) {
         $counter++;
         if ($counter == $max) {
-            scraperwiki::save_metadata('counter',10000000); 
+            scraperwiki::save_var('counter',10000000); 
             $i= 1001;
         }
 $html = oneline(scraperwiki::scrape("http://www.ukrlp.co.uk/ukrlp/ukrlp_provider.page_pls_provDetails?x=&pn_p_id=".$counter."&pv_status=VERIFIED&pv_vis_code=L"));
@@ -50,7 +50,7 @@ scraperwiki::save_sqlite(array('num'), array('num' => "".clean($num),'name' => c
                                             'primary_fax' => clean($primary['fax']),'primary_email' => clean($primary['email']),
                                       'primary_web' => clean($primary['web']), 'primary_courses' => clean($primary['courses']) ));    
     }
-      scraperwiki::save_metadata('counter',$counter);  
+      scraperwiki::save_var('counter',$counter);  
     }
     }
 
