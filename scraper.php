@@ -6,40 +6,38 @@ require 'scraperwiki/simple_html_dom.php';
 ######################################
 
 
-$max = 10032586;
-$counter = scraperwiki::get_var('counter');          
+$max = 10062383;
+$counter = scraperwiki::get_var('counter', 10000000);
 
 for ($i=0; $i<1000; $i++) {
-    $counter++;
-    if ($counter == $max) {
-        scraperwiki::save_var('counter', 10000000); 
-        $i= 1001;
-    }
+//while (true) {
     $html = oneline(scraperwiki::scrape("http://www.ukrlp.co.uk/ukrlp/ukrlp_provider.page_pls_provDetails?x=&pn_p_id=$counter&pv_status=VERIFIED&pv_vis_code=L"));
+    print "Getting UKPRN $counter\n";
     
     preg_match_all('|<div class="pod_main_body">(.*?<div )class="searchleft">|', $html, $arr);
     $code = (isset($arr[1][0])) ? $arr[1][0] : '';
     
     if ($code != '') {
-        preg_match_all('|<div class="provhead">UKPRN: ([0-9]*?)</div>|', $code, $num);
-        $num = (isset($num[1][0])) ? trim($num[1][0]) : '';
+        preg_match_all('|<div class="provhead">UKPRN: ([0-9]*?)</div>|', $code, $arr);
+        $num = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
         
-        preg_match_all('|</div>.*?<div class="provhead">(.*?)<|', $code, $name);
-        $name = (isset($name[1][0])) ? trim($name[1][0]) : '';
+        preg_match_all('|</div>.*?<div class="pt">(.*?)<|', $code, $arr);
+        $name = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
         
-        preg_match_all('|<div class="tradingname">Trading Name: <span>(.*?)</span></div>|', $code, $trading);
-        $trading = (isset($trading[1][0])) ? trim($trading[1][0]) : '';
+        preg_match_all('|<div class="tradingname">Trading Name: <span>(.*?)</span></div>|', $code, $arr);
+        $trading = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
         
-        preg_match_all('|<div class="assoc">Legal address</div>(.*?)<div|', $code, $legal);
-        $legal = (isset($legal[1][0])) ? trim($legal[1][0]) : '';
+        preg_match_all('|<div class="assoc">Legal Address</div>(.*?)<div|', $code, $arr);
+        $legal = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
         
-        preg_match_all('|<div class="assoc">Primary contact address</div>(.*?)<div|', $code, $primary);
-        $primary = (isset($primary[1][0])) ? trim($primary[1][0]) : '';
+        preg_match_all('|<div class="assoc">Primary contact address</div>(.*?)<div|', $code, $arr);
+        $primary = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
         
         $primary = parseAddress($primary);
         $legal= parseAddress($legal);
         
         if (trim($name)!='') {
+            print "Saving Inforamtion for UKPRN $counter\n";
             scraperwiki::save_sqlite(
                 array('num'),
                 array(
@@ -62,23 +60,29 @@ for ($i=0; $i<1000; $i++) {
         }
         scraperwiki::save_var('counter',$counter);
     }
+    $counter++;
+    
+    if ($counter == $max) {
+        scraperwiki::save_var('counter', 10000000);
+        break;
+    }
 }
 
 function parseAddress($val) {
-    preg_match_all('|<strong>Telephone: </strong>(.*?)<br />|',$val,$phone);
-    if (isset($phone[1][0])) { $dat['phone'] = trim($phone[1][0]);} else { $dat['phone']='';}
+    preg_match_all('|<strong>Telephone: </strong>(.*?)<br />|', $val, $arr);
+    $dat['phone'] = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
     
-    preg_match_all('|<strong>E-mail: </strong><a href="mailto:(.*?)">.*?</a><br />|',$val,$email);
-    if (isset($email[1][0])) { $dat['email'] = trim($email[1][0]);} else { $dat['email']='';}
+    preg_match_all('|<strong>E-mail: </strong><a href="mailto:(.*?)">.*?</a><br />|', $val, $arr);
+    $dat['email'] = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
     
-    preg_match_all('|<strong>Website: </strong><a target="_blank" href="(.*?)">.*?</a><br />|',$val,$web);
-    if (isset($web[1][0])) { $dat['web'] = trim($web[1][0]);} else { $dat['web']='';}
+    preg_match_all('|<strong>Website: </strong><a target="_blank" href="(.*?)">.*?</a><br />|', $val, $arr);
+    $dat['web'] = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
     
-    preg_match_all('|<strong>Fax: </strong>(.*?)<br />|',$val,$fax);
-    if (isset($fax[1][0])) { $dat['fax'] = trim($fax[1][0]);} else { $dat['fax']='';}
+    preg_match_all('|<strong>Fax: </strong>(.*?)<br />|', $val, $arr);
+    $dat['fax'] = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
     
-    if (isset($courses[1][0])) { $dat ['courses'] = trim($courses[1][0]);} else { $dat['courses']='';}
-    preg_match_all('|<strong>Courses: </strong>(.*?)<br />|',$val,$courses);
+    preg_match_all('|<strong>Courses: </strong>(.*?)<br />|', $val, $arr);
+    $dat['courses'] = (isset($arr[1][0])) ? trim($arr[1][0]) : '';
     
     $p = explode('<strong>',$val);
     $p = explode('<br />',$p[0]);
@@ -86,8 +90,8 @@ function parseAddress($val) {
     $dat['address'] = '';
     foreach ($p as $a) {
         $a = trim($a);
-        if ($a !='') {
-            if ($dat['address']!='') { $dat['address'] .=', '; }
+        if ($a != '') {
+            if ($dat['address'] != '') { $dat['address'] .= ', '; }
             $dat['address'] .= $a;
         }
     }
@@ -101,8 +105,8 @@ function parseAddress($val) {
 }
 
 function clean($val) {
-    $val = str_replace('&nbsp;',' ',$val);
-    $val = str_replace('&amp;','&',$val);
+    $val = str_replace('&nbsp;', ' ', $val);
+    $val = str_replace('&amp;', '&', $val);
     $val = html_entity_decode($val);
     $val = strip_tags($val);
     $val = trim($val);
@@ -112,11 +116,10 @@ function clean($val) {
 }
 
 function oneline($code) {
-    $code = str_replace("\n",'',$code);
-    $code = str_replace("\r",'',$code);
+    $code = str_replace("\n", '', $code);
+    $code = str_replace("\r", '', $code);
     
     return $code;
 }
-
 
 ?>
